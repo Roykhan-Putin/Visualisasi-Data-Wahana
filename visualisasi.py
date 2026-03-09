@@ -611,7 +611,7 @@ if all([f_p_hier, f_w_hier, f_m_hier, f_p_base, f_w_base, f_m_base]):
         fig_d, (ax_da, ax_dp) = plt.subplots(1, 2, figsize=(14, 5))
         bars_a = ax_da.barh(col_names, delta_abs, color=bar_colors, height=0.5)
         ax_da.axvline(0, color='black', linewidth=0.8)
-        apply_theme(ax_da, title='Selisih Absolut (Hier − Base)', xlabel='Δ Nilai')
+        apply_theme(ax_da, title='Selisih Absolut (Strategi − Tanpa Strategi)', xlabel='Δ Nilai')
         ax_da.tick_params(axis='y', labelsize=9)
         for bar, val in zip(bars_a, delta_abs):
             lbl = f'{val:+.2f}'
@@ -622,7 +622,7 @@ if all([f_p_hier, f_w_hier, f_m_hier, f_p_base, f_w_base, f_m_base]):
                        color=CLR_CYAN if val >= 0 else CLR_VIOLET)
         bars_p = ax_dp.barh(col_names, delta_pct, color=bar_colors, height=0.5)
         ax_dp.axvline(0, color='black', linewidth=0.8)
-        apply_theme(ax_dp, title='Selisih Persentase (Hier − Base)', xlabel='Δ (%)')
+        apply_theme(ax_dp, title='Selisih Persentase (Strategi − Tanpa Strategi)', xlabel='Δ (%)')
         ax_dp.tick_params(axis='y', labelsize=9)
         for bar, val in zip(bars_p, delta_pct):
             lbl = f'{val:+.1f}%'
