@@ -512,7 +512,6 @@ if all([f_p_hier, f_w_hier, f_m_hier, f_p_base, f_w_base, f_m_base]):
         st.markdown('<div class="section-header">04 &nbsp; Perbandingan Data Meta: Strategi vs Baseline</div>', unsafe_allow_html=True)
 
         meta_cols = [
-            ('Total Pengunjung',       'Jumlah Orang',           '👤'),
             ('Avg Rides',              'Wahana / Orang',          '🎢'),
             ('Avg Queue Global (m)',   'Menit',                   '⏱'),
             ('Satisfaction Score (%)', 'Persentase (%)',           '😊'),
@@ -571,8 +570,8 @@ if all([f_p_hier, f_w_hier, f_m_hier, f_p_base, f_w_base, f_m_base]):
 
         # ── Grafik 3: Radar / Spider Chart ───────────────────────────────────
         st.markdown('<div class="chart-panel"><div class="chart-title">▸ RADAR CHART — PROFIL PERFORMA KESELURUHAN</div>', unsafe_allow_html=True)
-        radar_cols   = ['Avg Rides', 'Avg Queue Global (m)', 'Satisfaction Score (%)', 'Global Rho', 'Total Pengunjung']
-        radar_labels = ['Avg Rides', 'Avg Queue\nGlobal (m)', 'Satisfaction\nScore (%)', 'Global Rho', 'Total\nPengunjung']
+        radar_cols   = ['Avg Rides', 'Avg Queue Global (m)', 'Satisfaction Score (%)', 'Global Rho']
+        radar_labels = ['Avg Rides', 'Avg Queue\nGlobal (m)', 'Satisfaction\nScore (%)', 'Global Rho']
         vals_h_raw = np.array([float(df_m_hier[c].values[0]) for c in radar_cols])
         vals_b_raw = np.array([float(df_m_base[c].values[0]) for c in radar_cols])
         combined_max = np.maximum(vals_h_raw, vals_b_raw)
