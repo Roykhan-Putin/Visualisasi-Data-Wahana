@@ -537,7 +537,7 @@ if all([f_p_hier, f_w_hier, f_m_hier, f_p_base, f_w_base, f_m_base]):
             lbl = f'{val:.2f}' if val % 1 != 0 else f'{int(val)}'
             ax.text(bar.get_x() + bar.get_width()/2, val, lbl,
                     ha='center', va='bottom', fontsize=9, fontweight='bold', color=CLR_VIOLET)
-        apply_theme(ax, title='Perbandingan KPI Keseluruhan', ylabel='Nilai')
+        apply_theme(ax, title='Perbandingan Metrik Keseluruhan', ylabel='Nilai')
         ax.set_xticks(x)
         ax.set_xticklabels(col_names, fontsize=9)
         ax.legend()
