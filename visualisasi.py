@@ -21,17 +21,24 @@ color_base = '#818cf8'  # Ungu (Tanpa Strategi)
 # ==========================================
 # 1. SIDEBAR: UPLOAD DATA
 # ==========================================
-st.sidebar.header("📂 Upload Data CSV")
+st.sidebar.header("📂 1. Upload Data Simulasi (1 Run)")
 
-st.sidebar.markdown("**1. Skenario Dengan Strategi**")
+st.sidebar.markdown("**A. Skenario Dengan Strategi**")
 f_p_hier = st.sidebar.file_uploader("Data Pengunjung (Strategi)", type="csv", key="p_h")
 f_w_hier = st.sidebar.file_uploader("Data Wahana (Strategi)", type="csv", key="w_h")
 f_m_hier = st.sidebar.file_uploader("Data Meta (Strategi)", type="csv", key="m_h")
 
-st.sidebar.markdown("**2. Skenario Tanpa Strategi**")
+st.sidebar.markdown("**B. Skenario Tanpa Strategi**")
 f_p_base = st.sidebar.file_uploader("Data Pengunjung (Baseline)", type="csv", key="p_b")
 f_w_base = st.sidebar.file_uploader("Data Wahana (Baseline)", type="csv", key="w_b")
 f_m_base = st.sidebar.file_uploader("Data Meta (Baseline)", type="csv", key="m_b")
+
+st.sidebar.markdown("---")
+st.sidebar.header("📈 2. Analisis Sensitivitas (Beragam N)")
+st.sidebar.info("Upload BANYAK file 'Data Meta' dari simulasi dengan jumlah N yang berbeda-beda ke dalam kotak di bawah ini.")
+
+f_meta_multi_hier = st.sidebar.file_uploader("Kumpulan Data Meta (Strategi)", type="csv", accept_multiple_files=True, key="mm_h")
+f_meta_multi_base = st.sidebar.file_uploader("Kumpulan Data Meta (Baseline)", type="csv", accept_multiple_files=True, key="mm_b")
 
 # ==========================================
 # 2. PROSES & VISUALISASI JIKA FILE LENGKAP
@@ -133,7 +140,6 @@ if all([f_p_hier, f_w_hier, f_m_hier, f_p_base, f_w_base, f_m_base]):
         col3, col4 = st.columns(2)
 
         with col3:
-            # Distribusi Jumlah Wahana
             bins = [0, 2, 5, 9, 14, 20, 25]
             labels = ['1-2', '3-5', '6-9', '10-14', '15-20', '21+']
 
@@ -158,7 +164,6 @@ if all([f_p_hier, f_w_hier, f_m_hier, f_p_base, f_w_base, f_m_base]):
             plt.close(fig_dist)
 
         with col4:
-            # Pola Kedatangan
             fig_arr, ax_arr = plt.subplots(figsize=(8, 5))
             jam_hier = df_p_hier['Jam Masuk'].str.split(':').str[0].astype(int).value_counts().sort_index()
             jam_base = df_p_base['Jam Masuk'].str.split(':').str[0].astype(int).value_counts().sort_index()
@@ -178,12 +183,78 @@ if all([f_p_hier, f_w_hier, f_m_hier, f_p_base, f_w_base, f_m_base]):
             st.pyplot(fig_arr)
             plt.close(fig_arr)
 
-    st.success('Visualisasi berhasil dimuat! Anda bisa menyimpan grafik dengan cara klik kanan > Save Image as...')
+    st.success('Visualisasi 1 Run berhasil dimuat! Lanjutkan ke bagian Analisis Sensitivitas di bawah jika Anda mengunggah file multi-meta.')
 
-else:
-    # Tampilan awal jika belum ada file yang diupload
-    st.info("👈 Silakan upload ke-6 file CSV di panel sebelah kiri untuk mulai melihat visualisasi.")
+# ==========================================
+# 3. ANALISIS SENSITIVITAS (MULTIPLE FILES)
+# ==========================================
+if f_meta_multi_hier and f_meta_multi_base:
+    st.markdown("---")
+    st.subheader("📈 4. Analisis Sensitivitas Kapasitas Pengunjung (N)")
     
-    # Placeholder kosong agar layout tidak terlihat patah
+    with st.spinner('Membangun Kurva Sensitivitas...'):
+        # Fungsi untuk menggabungkan file multi menjadi 1 dataframe
+        def combine_meta_files(uploaded_files):
+            df_list = []
+            for file in uploaded_files:
+                df = pd.read_csv(file)
+                df_list.append(df)
+            combined_df = pd.concat(df_list, ignore_index=True)
+            # Sortir berdasarkan kolom N (Total Pengunjung) dari terkecil ke terbesar
+            combined_df = combined_df.sort_values(by='Total Pengunjung').reset_index(drop=True)
+            return combined_df
+            
+        df_multi_h = combine_meta_files(f_meta_multi_hier)
+        df_multi_b = combine_meta_files(f_meta_multi_base)
+
+        # Fungsi Pembantu Plot Line Sensitivitas
+        def create_sensitivity_plot(col_name, title, ylabel):
+            fig, ax = plt.subplots(figsize=(8, 5))
+            
+            ax.plot(df_multi_h['Total Pengunjung'], df_multi_h[col_name], 
+                    marker='o', color=color_hier, linewidth=2.5, label='Strategi (Hierarchical)')
+            ax.plot(df_multi_b['Total Pengunjung'], df_multi_b[col_name], 
+                    marker='o', color=color_base, linewidth=2.5, linestyle='--', label='Baseline (Tanpa Strategi)')
+            
+            ax.set_title(title, fontsize=12, fontweight='bold')
+            ax.set_xlabel('Total Pengunjung (N)', fontsize=10)
+            ax.set_ylabel(ylabel, fontsize=10)
+            ax.legend()
+            ax.grid(True, linestyle=':', alpha=0.6)
+            plt.tight_layout()
+            return fig
+
+        # Membuat 4 Plot sesuai request
+        col5, col6 = st.columns(2)
+        
+        with col5:
+            # Grafik 1: Waktu Tunggu vs N
+            fig_q_sens = create_sensitivity_plot('Avg Queue Global (m)', 'Trade-off: Waktu Tunggu vs Kapasitas Pengunjung', 'Global Avg Queue (Menit)')
+            st.pyplot(fig_q_sens)
+            plt.close(fig_q_sens)
+            
+            # Grafik 2: Global Rho vs N
+            fig_rho_sens = create_sensitivity_plot('Global Rho', 'Beban Mesin Wahana (Utilisasi) vs Kapasitas Pengunjung', 'Global Rho (ρ)')
+            st.pyplot(fig_rho_sens)
+            plt.close(fig_rho_sens)
+
+        with col6:
+            # Grafik 3: Rata-rata Wahana vs N
+            fig_rides_sens = create_sensitivity_plot('Avg Rides', 'Kemampuan Jelajah Wahana vs Kapasitas Pengunjung', 'Rata-rata Wahana per Orang')
+            st.pyplot(fig_rides_sens)
+            plt.close(fig_rides_sens)
+            
+            # Grafik 4: Satisfaction vs N
+            fig_sat_sens = create_sensitivity_plot('Satisfaction Score (%)', 'Tingkat Kepuasan vs Kapasitas Pengunjung', 'Satisfaction Score (%)')
+            st.pyplot(fig_sat_sens)
+            plt.close(fig_sat_sens)
+
+elif (f_meta_multi_hier and not f_meta_multi_base) or (f_meta_multi_base and not f_meta_multi_hier):
+    st.warning("⚠️ Untuk menampilkan Analisis Sensitivitas, harap upload Kumpulan Data Meta untuk KEDUA Skenario (Strategi & Baseline) di sidebar.")
+
+elif not all([f_p_hier, f_w_hier, f_m_hier, f_p_base, f_w_base, f_m_base]):
+    # Tampilan awal jika belum ada file yang diupload sama sekali
+    st.info("👈 Silakan upload file CSV di panel sebelah kiri untuk mulai melihat visualisasi.")
+    
     st.image("https://www.ancol.com/shared/images/logo-dufan.png", width=200)
     st.markdown("*Aplikasi ini memproses log Agent-Based Simulation tanpa mengirimkan data ke server eksternal.*")
