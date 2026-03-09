@@ -212,9 +212,9 @@ if f_meta_multi_hier and f_meta_multi_base:
             fig, ax = plt.subplots(figsize=(8, 5))
             
             ax.plot(df_multi_h['Total Pengunjung'], df_multi_h[col_name], 
-                    marker='o', color=color_hier, linewidth=2.5, label='Strategi (Hierarchical)')
+                    marker='o', color=color_hier, linewidth=2.5, label='Strategi (Hierarchical + PWT)')
             ax.plot(df_multi_b['Total Pengunjung'], df_multi_b[col_name], 
-                    marker='o', color=color_base, linewidth=2.5, linestyle='--', label='Baseline (Tanpa Strategi)')
+                    marker='o', color=color_base, linewidth=2.5, linestyle='--', label='Tanpa Strategi')
             
             ax.set_title(title, fontsize=12, fontweight='bold')
             ax.set_xlabel('Total Pengunjung (N)', fontsize=10)
@@ -229,18 +229,18 @@ if f_meta_multi_hier and f_meta_multi_base:
         
         with col5:
             # Grafik 1: Waktu Tunggu vs N
-            fig_q_sens = create_sensitivity_plot('Avg Queue Global (m)', 'Trade-off: Waktu Tunggu vs Kapasitas Pengunjung', 'Global Avg Queue (Menit)')
+            fig_q_sens = create_sensitivity_plot('Avg Queue Global (m)', 'Waktu Tunggu vs Kapasitas Pengunjung', 'Global Avg Queue (Menit)')
             st.pyplot(fig_q_sens)
             plt.close(fig_q_sens)
             
             # Grafik 2: Global Rho vs N
-            fig_rho_sens = create_sensitivity_plot('Global Rho', 'Beban Mesin Wahana (Utilisasi) vs Kapasitas Pengunjung', 'Global Rho (ρ)')
+            fig_rho_sens = create_sensitivity_plot('Global Rho', 'Utilitas (ρ) vs Kapasitas Pengunjung', 'Global Rho (ρ)')
             st.pyplot(fig_rho_sens)
             plt.close(fig_rho_sens)
 
         with col6:
             # Grafik 3: Rata-rata Wahana vs N
-            fig_rides_sens = create_sensitivity_plot('Avg Rides', 'Kemampuan Jelajah Wahana vs Kapasitas Pengunjung', 'Rata-rata Wahana per Orang')
+            fig_rides_sens = create_sensitivity_plot('Avg Rides', 'Banyak Visit Wahana vs Kapasitas Pengunjung', 'Rata-rata Wahana per Orang')
             st.pyplot(fig_rides_sens)
             plt.close(fig_rides_sens)
             
