@@ -508,6 +508,137 @@ if all([f_p_hier, f_w_hier, f_m_hier, f_p_base, f_w_base, f_m_base]):
             plt.close(fig)
             st.markdown('</div>', unsafe_allow_html=True)
 
+        # ── SECTION 4: PERBANDINGAN DATA META ────────────────────────────────
+        st.markdown('<div class="section-header">04 &nbsp; Perbandingan Data Meta: Strategi vs Baseline</div>', unsafe_allow_html=True)
+
+        meta_cols = [
+            ('Total Pengunjung',       'Jumlah Orang',           '👤'),
+            ('Avg Rides',              'Wahana / Orang',          '🎢'),
+            ('Avg Queue Global (m)',   'Menit',                   '⏱'),
+            ('Satisfaction Score (%)', 'Persentase (%)',           '😊'),
+            ('Global Rho',             'Utilisasi (0.0 – 1.5+)',  '📊'),
+        ]
+
+        val_hier_list = [float(df_m_hier[c].values[0]) for c, _, _ in meta_cols]
+        val_base_list = [float(df_m_base[c].values[0]) for c, _, _ in meta_cols]
+        col_names     = [c for c, _, _ in meta_cols]
+
+        # ── Grafik 1: Grouped Bar semua KPI sekaligus ────────────────────────
+        st.markdown('<div class="chart-panel"><div class="chart-title">▸ PERBANDINGAN SEMUA KPI — STRATEGI vs BASELINE</div>', unsafe_allow_html=True)
+        fig, ax = styled_fig(12, 5)
+        x = np.arange(len(col_names))
+        w = 0.35
+        b1 = ax.bar(x - w/2, val_hier_list, w, label='Hierarchical + PWT (Strategi)', color=CLR_CYAN)
+        b2 = ax.bar(x + w/2, val_base_list, w, label='No Hierarchical (Baseline)',    color=CLR_VIOLET)
+        for bar, val in zip(b1, val_hier_list):
+            lbl = f'{val:.2f}' if val % 1 != 0 else f'{int(val)}'
+            ax.text(bar.get_x() + bar.get_width()/2, val, lbl,
+                    ha='center', va='bottom', fontsize=9, fontweight='bold', color=CLR_CYAN)
+        for bar, val in zip(b2, val_base_list):
+            lbl = f'{val:.2f}' if val % 1 != 0 else f'{int(val)}'
+            ax.text(bar.get_x() + bar.get_width()/2, val, lbl,
+                    ha='center', va='bottom', fontsize=9, fontweight='bold', color=CLR_VIOLET)
+        apply_theme(ax, title='Perbandingan KPI Keseluruhan', ylabel='Nilai')
+        ax.set_xticks(x)
+        ax.set_xticklabels(col_names, fontsize=9)
+        ax.legend()
+        plt.tight_layout()
+        st.pyplot(fig, use_container_width=True)
+        plt.close(fig)
+        st.markdown('</div>', unsafe_allow_html=True)
+
+        # ── Grafik 2: Bar chart per KPI individual (2 kolom x 3 baris) ───────
+        st.markdown('<div class="chart-panel"><div class="chart-title">▸ DETAIL PER KPI</div>', unsafe_allow_html=True)
+        fig, axes = plt.subplots(2, 3, figsize=(15, 8))
+        axes = axes.flatten()
+        labels_bar = ['Strategi (Hier)', 'Tanpa Strategi']
+        colors_bar  = [CLR_CYAN, CLR_VIOLET]
+        for i, (col, ylabel, icon) in enumerate(meta_cols):
+            ax_i = axes[i]
+            val_h = float(df_m_hier[col].values[0])
+            val_b = float(df_m_base[col].values[0])
+            bars = ax_i.bar(labels_bar, [val_h, val_b], color=colors_bar, width=0.5)
+            apply_theme(ax_i, title=f'{icon}  {col.upper()}', ylabel=ylabel)
+            for bar, val in zip(bars, [val_h, val_b]):
+                lbl = f'{val:.2f}' if val % 1 != 0 else f'{int(val)}'
+                ax_i.text(bar.get_x() + bar.get_width()/2, val, lbl,
+                          ha='center', va='bottom', fontsize=11, fontweight='bold')
+        axes[5].axis('off')
+        plt.tight_layout()
+        st.pyplot(fig, use_container_width=True)
+        plt.close(fig)
+        st.markdown('</div>', unsafe_allow_html=True)
+
+        # ── Grafik 3: Radar / Spider Chart ───────────────────────────────────
+        st.markdown('<div class="chart-panel"><div class="chart-title">▸ RADAR CHART — PROFIL PERFORMA KESELURUHAN</div>', unsafe_allow_html=True)
+        radar_cols   = ['Avg Rides', 'Avg Queue Global (m)', 'Satisfaction Score (%)', 'Global Rho', 'Total Pengunjung']
+        radar_labels = ['Avg Rides', 'Avg Queue\nGlobal (m)', 'Satisfaction\nScore (%)', 'Global Rho', 'Total\nPengunjung']
+        vals_h_raw = np.array([float(df_m_hier[c].values[0]) for c in radar_cols])
+        vals_b_raw = np.array([float(df_m_base[c].values[0]) for c in radar_cols])
+        combined_max = np.maximum(vals_h_raw, vals_b_raw)
+        combined_min = np.minimum(vals_h_raw, vals_b_raw)
+        norm_range   = np.where(combined_max - combined_min == 0, 1, combined_max - combined_min)
+        vals_h_norm  = (vals_h_raw - combined_min) / norm_range
+        vals_b_norm  = (vals_b_raw - combined_min) / norm_range
+        N_radar = len(radar_cols)
+        angles  = np.linspace(0, 2 * np.pi, N_radar, endpoint=False).tolist()
+        angles += angles[:1]
+        vals_h_plot = vals_h_norm.tolist() + vals_h_norm[:1].tolist()
+        vals_b_plot = vals_b_norm.tolist() + vals_b_norm[:1].tolist()
+        fig_r, ax_r = plt.subplots(figsize=(7, 7), subplot_kw=dict(polar=True))
+        ax_r.set_facecolor('white')
+        fig_r.patch.set_facecolor('white')
+        ax_r.plot(angles, vals_h_plot, 'o-', linewidth=2, color=CLR_CYAN,   label='Hierarchical + PWT')
+        ax_r.fill(angles, vals_h_plot, alpha=0.20, color=CLR_CYAN)
+        ax_r.plot(angles, vals_b_plot, 'o-', linewidth=2, color=CLR_VIOLET, label='No Hierarchical', linestyle='--')
+        ax_r.fill(angles, vals_b_plot, alpha=0.15, color=CLR_VIOLET)
+        ax_r.set_thetagrids(np.degrees(angles[:-1]), radar_labels, fontsize=10)
+        ax_r.set_ylim(0, 1.1)
+        ax_r.set_yticks([0.25, 0.5, 0.75, 1.0])
+        ax_r.set_yticklabels(['25%', '50%', '75%', '100%'], fontsize=7, color='grey')
+        ax_r.grid(color='grey', linestyle=':', linewidth=0.6, alpha=0.5)
+        ax_r.set_title('Radar Performa (Nilai Ternormalisasi)', fontsize=12, fontweight='bold', pad=20)
+        ax_r.legend(loc='upper right', bbox_to_anchor=(1.35, 1.15), fontsize=9)
+        col_r1, col_r2, col_r3 = st.columns([1, 2, 1])
+        with col_r2:
+            st.pyplot(fig_r, use_container_width=True)
+        plt.close(fig_r)
+        st.markdown('</div>', unsafe_allow_html=True)
+
+        # ── Grafik 4: Delta / Selisih absolut & persen ───────────────────────
+        st.markdown('<div class="chart-panel"><div class="chart-title">▸ DELTA IMPROVEMENT — STRATEGI vs BASELINE</div>', unsafe_allow_html=True)
+        delta_abs  = [h - b for h, b in zip(val_hier_list, val_base_list)]
+        delta_pct  = [((h - b) / (abs(b) + 1e-9)) * 100 for h, b in zip(val_hier_list, val_base_list)]
+        bar_colors = [CLR_CYAN if d >= 0 else CLR_VIOLET for d in delta_pct]
+        fig_d, (ax_da, ax_dp) = plt.subplots(1, 2, figsize=(14, 5))
+        bars_a = ax_da.barh(col_names, delta_abs, color=bar_colors, height=0.5)
+        ax_da.axvline(0, color='black', linewidth=0.8)
+        apply_theme(ax_da, title='Selisih Absolut (Hier − Base)', xlabel='Δ Nilai')
+        ax_da.tick_params(axis='y', labelsize=9)
+        for bar, val in zip(bars_a, delta_abs):
+            lbl = f'{val:+.2f}'
+            x_pos = val + (max(abs(v) for v in delta_abs) * 0.02) * (1 if val >= 0 else -1)
+            ax_da.text(x_pos, bar.get_y() + bar.get_height()/2, lbl,
+                       va='center', ha='left' if val >= 0 else 'right',
+                       fontsize=9, fontweight='bold',
+                       color=CLR_CYAN if val >= 0 else CLR_VIOLET)
+        bars_p = ax_dp.barh(col_names, delta_pct, color=bar_colors, height=0.5)
+        ax_dp.axvline(0, color='black', linewidth=0.8)
+        apply_theme(ax_dp, title='Selisih Persentase (Hier − Base)', xlabel='Δ (%)')
+        ax_dp.tick_params(axis='y', labelsize=9)
+        for bar, val in zip(bars_p, delta_pct):
+            lbl = f'{val:+.1f}%'
+            x_pos = val + (max(abs(v) for v in delta_pct) * 0.02) * (1 if val >= 0 else -1)
+            ax_dp.text(x_pos, bar.get_y() + bar.get_height()/2, lbl,
+                       va='center', ha='left' if val >= 0 else 'right',
+                       fontsize=9, fontweight='bold',
+                       color=CLR_CYAN if val >= 0 else CLR_VIOLET)
+        plt.tight_layout()
+        st.pyplot(fig_d, use_container_width=True)
+        plt.close(fig_d)
+        st.markdown('</div>', unsafe_allow_html=True)
+
+
     st.success('✔  Visualisasi 1 Run berhasil dimuat. Lanjut ke Analisis Sensitivitas di sidebar jika file multi-meta sudah siap.')
 
 # ==========================================
