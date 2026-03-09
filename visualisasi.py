@@ -512,10 +512,10 @@ if all([f_p_hier, f_w_hier, f_m_hier, f_p_base, f_w_base, f_m_base]):
         st.markdown('<div class="section-header">04 &nbsp; Perbandingan Data Meta: Strategi vs Baseline</div>', unsafe_allow_html=True)
 
         meta_cols = [
-            ('Avg Rides',              'Wahana / Orang',          '🎢'),
-            ('Avg Queue Global (m)',   'Menit',                   '⏱'),
-            ('Satisfaction Score (%)', 'Persentase (%)',           '😊'),
-            ('Global Rho',             'Utilisasi (0.0 – 1.5+)',  '📊'),
+            ('Avg Rides',              'Wahana / Orang'),
+            ('Avg Queue Global (m)',   'Menit'),
+            ('Satisfaction Score (%)', 'Persentase (%)'),
+            ('Global Rho',             'Utilisasi (0.0 – 1.5+)'),
         ]
 
         val_hier_list = [float(df_m_hier[c].values[0]) for c, _, _ in meta_cols]
