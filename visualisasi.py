@@ -1,12 +1,8 @@
 import streamlit as st
 import pandas as pd
 import matplotlib.pyplot as plt
-import matplotlib.patches as mpatches
-import matplotlib.patheffects as pe
 import numpy as np
 import seaborn as sns
-from matplotlib.colors import LinearSegmentedColormap
-import matplotlib.gridspec as gridspec
 
 # ==========================================
 # 0. KONFIGURASI HALAMAN & INJEKSI CSS
@@ -321,42 +317,23 @@ st.markdown("""
 </div>
 """, unsafe_allow_html=True)
 
-# ─── DESIGN TOKENS (for matplotlib) ─────────────────────────────────────────
-BG_BASE    = "#060e1e"
-BG_CARD    = "#0a1630"
-BG_AXES    = "#071020"
+# ─── DESIGN TOKENS (for matplotlib — white/seaborn default) ──────────────────
 CLR_CYAN   = "#38bdf8"
 CLR_VIOLET = "#818cf8"
-CLR_GREEN  = "#22c55e"
-CLR_AMBER  = "#facc15"
 CLR_RED    = "#ef4444"
-CLR_BORDER = "#1a3a6a"
-TXT_MUTED  = "#94a3b8"
-TXT_FAINT  = "#475569"
-GRID_CLR   = "#0d2244"
+
+sns.set_theme(style="whitegrid")
+plt.rcParams['font.family'] = 'sans-serif'
 
 def apply_theme(ax, title="", xlabel="", ylabel=""):
-    """Apply main.js dark blueprint theme to a matplotlib Axes."""
-    ax.set_facecolor(BG_AXES)
-    ax.figure.patch.set_facecolor(BG_CARD)
-    for spine in ax.spines.values():
-        spine.set_color(CLR_BORDER)
-    ax.tick_params(colors=TXT_MUTED, labelsize=8)
-    ax.xaxis.label.set_color(TXT_MUTED)
-    ax.yaxis.label.set_color(TXT_MUTED)
-    ax.xaxis.label.set_fontsize(9)
-    ax.yaxis.label.set_fontsize(9)
-    ax.grid(True, color=GRID_CLR, linewidth=0.6, linestyle=':')
-    ax.set_axisbelow(True)
+    """Keep default seaborn whitegrid theme, just apply labels."""
     if title:
-        ax.set_title(title, color=CLR_CYAN, fontsize=10, fontweight='bold',
-                     fontfamily='monospace', pad=10, loc='left',
-                     path_effects=[pe.withStroke(linewidth=6, foreground=BG_CARD)])
-    if xlabel: ax.set_xlabel(xlabel)
-    if ylabel: ax.set_ylabel(ylabel)
+        ax.set_title(title, fontsize=12, fontweight='bold')
+    if xlabel: ax.set_xlabel(xlabel, fontsize=10)
+    if ylabel: ax.set_ylabel(ylabel, fontsize=10)
 
 def styled_fig(w=10, h=5):
-    fig, ax = plt.subplots(figsize=(w, h), facecolor=BG_CARD)
+    fig, ax = plt.subplots(figsize=(w, h))
     return fig, ax
 
 # ─── SIDEBAR ─────────────────────────────────────────────────────────────────
@@ -391,34 +368,15 @@ st.markdown("""
 
 # ─── HELPERS ─────────────────────────────────────────────────────────────────
 def bar_pair(ax, categories, vals_hier, vals_base, title="", ylabel=""):
-    """Render a grouped bar chart with the blueprint theme."""
+    """Render a grouped bar chart with default white seaborn style."""
     x = np.arange(len(categories))
-    w = 0.38
-    b1 = ax.bar(x - w/2, vals_hier, w, color=CLR_CYAN,   alpha=0.90, zorder=3,
-                label='Strategi (Hier)', linewidth=0)
-    b2 = ax.bar(x + w/2, vals_base, w, color=CLR_VIOLET, alpha=0.85, zorder=3,
-                label='Baseline',        linewidth=0)
-
-    # Glow effect bars
-    ax.bar(x - w/2, vals_hier, w, color=CLR_CYAN,   alpha=0.18, width=w+0.08, zorder=2, linewidth=0)
-    ax.bar(x + w/2, vals_base, w, color=CLR_VIOLET, alpha=0.15, width=w+0.08, zorder=2, linewidth=0)
-
+    w = 0.35
+    b1 = ax.bar(x - w/2, vals_hier, w, label='Hierarchical (Strategi)', color=CLR_CYAN)
+    b2 = ax.bar(x + w/2, vals_base, w, label='No Hierarchical (Baseline)', color=CLR_VIOLET)
     apply_theme(ax, title=title, ylabel=ylabel)
     ax.set_xticks(x)
-    ax.set_xticklabels(categories, rotation=40, ha='right', fontsize=8, color=TXT_MUTED)
-    # Value labels
-    for bar in b1:
-        v = bar.get_height()
-        label = f'{v:.1f}' if v % 1 != 0 else f'{int(v)}'
-        ax.text(bar.get_x() + bar.get_width()/2, v + max(vals_hier)*0.012, label,
-                ha='center', va='bottom', fontsize=7, color=CLR_CYAN,
-                fontfamily='monospace', fontweight='bold')
-    for bar in b2:
-        v = bar.get_height()
-        label = f'{v:.1f}' if v % 1 != 0 else f'{int(v)}'
-        ax.text(bar.get_x() + bar.get_width()/2, v + max(vals_base)*0.012, label,
-                ha='center', va='bottom', fontsize=7, color=CLR_VIOLET,
-                fontfamily='monospace', fontweight='bold')
+    ax.set_xticklabels(categories, rotation=45, ha='right', fontsize=8)
+    ax.legend()
     return b1, b2
 
 def create_wahana_plot(df_w_hier, df_w_base, col_name, title, ylabel):
@@ -526,9 +484,8 @@ if all([f_p_hier, f_w_hier, f_m_hier, f_p_base, f_w_base, f_m_base]):
             out_b  = pd.cut(df_p_base['Total Naik'], bins=bins, labels=labels, include_lowest=True).value_counts(sort=False)
 
             fig, ax = styled_fig(8, 4.5)
-            bar_pair(ax, labels, out_h.values, out_b.values, ylabel='Jumlah Pengunjung')
-            apply_theme(ax)
-            plt.tight_layout(pad=1.4)
+            bar_pair(ax, labels, out_h.values, out_b.values, title='Distribusi Jumlah Wahana yang Dinaiki', ylabel='Jumlah Pengunjung')
+            plt.tight_layout()
             st.pyplot(fig, use_container_width=True)
             plt.close(fig)
             st.markdown('</div>', unsafe_allow_html=True)
@@ -539,25 +496,14 @@ if all([f_p_hier, f_w_hier, f_m_hier, f_p_base, f_w_base, f_m_base]):
             jam_b = df_p_base['Jam Masuk'].str.split(':').str[0].astype(int).value_counts().sort_index()
 
             fig, ax = styled_fig(8, 4.5)
-            apply_theme(ax, ylabel='Kedatangan', xlabel='Jam')
-
-            # Area fill
-            ax.fill_between(jam_h.index, jam_h.values, alpha=0.12, color=CLR_CYAN, zorder=2)
-            ax.fill_between(jam_b.index, jam_b.values, alpha=0.10, color=CLR_VIOLET, zorder=2)
-            # Lines
-            ax.plot(jam_h.index, jam_h.values, marker='o', markersize=5,
-                    color=CLR_CYAN, linewidth=2.2, zorder=4, label='Strategi (Hier)',
-                    markerfacecolor=BG_CARD, markeredgecolor=CLR_CYAN, markeredgewidth=2)
-            ax.plot(jam_b.index, jam_b.values, marker='o', markersize=5,
-                    color=CLR_VIOLET, linewidth=2.2, linestyle='--', zorder=4, label='Baseline',
-                    markerfacecolor=BG_CARD, markeredgecolor=CLR_VIOLET, markeredgewidth=2)
+            ax.plot(jam_h.index, jam_h.values, marker='o', color=CLR_CYAN, linewidth=2, label='Hierarchical')
+            ax.plot(jam_b.index, jam_b.values, marker='o', color=CLR_VIOLET, linewidth=2, label='No Hierarchical')
+            ax.fill_between(jam_h.index, jam_h.values, alpha=0.1, color=CLR_CYAN)
+            ax.fill_between(jam_b.index, jam_b.values, alpha=0.1, color=CLR_VIOLET)
+            apply_theme(ax, title='Pola Kedatangan Pengunjung per Jam', ylabel='Jumlah Kedatangan', xlabel='Jam')
             ax.set_xticks(np.arange(10, 21, 1))
-
-            # Custom legend
-            leg = ax.legend(facecolor=BG_CARD, edgecolor=CLR_BORDER,
-                            labelcolor=[CLR_CYAN, CLR_VIOLET], fontsize=8)
-            leg.get_frame().set_linewidth(0.8)
-            plt.tight_layout(pad=1.4)
+            ax.legend()
+            plt.tight_layout()
             st.pyplot(fig, use_container_width=True)
             plt.close(fig)
             st.markdown('</div>', unsafe_allow_html=True)
@@ -590,24 +536,14 @@ if f_meta_multi_hier and f_meta_multi_base:
 
             st.markdown(f'<div class="chart-panel"><div class="chart-title">▸ {title}</div>', unsafe_allow_html=True)
             fig, ax = styled_fig(8, 4.2)
-            apply_theme(ax, ylabel=ylabel, xlabel='Total Pengunjung (N)')
-
-            ax.fill_between(df_mh['Total Pengunjung'], df_mh[col_name], alpha=0.10, color=CLR_CYAN, zorder=2)
-            ax.fill_between(df_mb['Total Pengunjung'], df_mb[col_name], alpha=0.08, color=CLR_VIOLET, zorder=2)
-
-            ax.plot(df_mh['Total Pengunjung'], df_mh[col_name], marker='o', markersize=5,
-                    color=CLR_CYAN, linewidth=2.5, zorder=4, label='Strategi (Hierarchical + PWT)',
-                    markerfacecolor=BG_CARD, markeredgecolor=CLR_CYAN, markeredgewidth=2)
-            ax.plot(df_mb['Total Pengunjung'], df_mb[col_name], marker='o', markersize=5,
-                    color=CLR_VIOLET, linewidth=2.5, linestyle='--', zorder=4, label='Tanpa Strategi',
-                    markerfacecolor=BG_CARD, markeredgecolor=CLR_VIOLET, markeredgewidth=2)
-
-            leg = ax.legend(facecolor=BG_CARD, edgecolor=CLR_BORDER, fontsize=8)
-            leg.get_frame().set_linewidth(0.8)
-            for text, clr in zip(leg.get_texts(), [CLR_CYAN, CLR_VIOLET]):
-                text.set_color(clr)
-
-            plt.tight_layout(pad=1.4)
+            ax.plot(df_mh['Total Pengunjung'], df_mh[col_name],
+                    marker='o', color=CLR_CYAN, linewidth=2.5, label='Strategi (Hierarchical + PWT)')
+            ax.plot(df_mb['Total Pengunjung'], df_mb[col_name],
+                    marker='o', color=CLR_VIOLET, linewidth=2.5, linestyle='--', label='Tanpa Strategi')
+            apply_theme(ax, title=title, ylabel=ylabel, xlabel='Total Pengunjung (N)')
+            ax.legend()
+            ax.grid(True, linestyle=':', alpha=0.6)
+            plt.tight_layout()
             c.pyplot(fig, use_container_width=True)
             plt.close(fig)
             st.markdown('</div>', unsafe_allow_html=True)
