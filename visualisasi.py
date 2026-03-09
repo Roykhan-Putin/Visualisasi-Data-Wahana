@@ -512,10 +512,10 @@ if all([f_p_hier, f_w_hier, f_m_hier, f_p_base, f_w_base, f_m_base]):
         st.markdown('<div class="section-header">04 &nbsp; Perbandingan Data Meta: Strategi vs Baseline</div>', unsafe_allow_html=True)
 
         meta_cols = [
-            ('Avg Rides',              'Wahana / Orang',          ''),
-            ('Avg Queue Global (m)',   'Menit',                   ''),
-            ('Satisfaction Score (%)', 'Persentase (%)',           ''),
-            ('Global Rho',             'Utilisasi (0.0 – 1.5+)',  ''),
+            ('Avg Rides',              'Wahana / Orang',          '🎢'),
+            ('Avg Queue Global (m)',   'Menit',                   '⏱'),
+            ('Satisfaction Score (%)', 'Persentase (%)',           '😊'),
+            ('Global Rho',             'Utilisasi (0.0 – 1.5+)',  '📊'),
         ]
 
         val_hier_list = [float(df_m_hier[c].values[0]) for c, _, _ in meta_cols]
@@ -546,9 +546,9 @@ if all([f_p_hier, f_w_hier, f_m_hier, f_p_base, f_w_base, f_m_base]):
         plt.close(fig)
         st.markdown('</div>', unsafe_allow_html=True)
 
-        # ── Grafik 2: Bar chart per KPI individual (2 kolom x 3 baris) ───────
+        # ── Grafik 2: Bar chart per KPI individual (2 kolom x 2 baris) ───────
         st.markdown('<div class="chart-panel"><div class="chart-title">▸ DETAIL PER KPI</div>', unsafe_allow_html=True)
-        fig, axes = plt.subplots(2, 3, figsize=(15, 8))
+        fig, axes = plt.subplots(2, 2, figsize=(12, 8))
         axes = axes.flatten()
         labels_bar = ['Strategi (Hier)', 'Tanpa Strategi']
         colors_bar  = [CLR_CYAN, CLR_VIOLET]
@@ -562,7 +562,6 @@ if all([f_p_hier, f_w_hier, f_m_hier, f_p_base, f_w_base, f_m_base]):
                 lbl = f'{val:.2f}' if val % 1 != 0 else f'{int(val)}'
                 ax_i.text(bar.get_x() + bar.get_width()/2, val, lbl,
                           ha='center', va='bottom', fontsize=11, fontweight='bold')
-        axes[5].axis('off')
         plt.tight_layout()
         st.pyplot(fig, use_container_width=True)
         plt.close(fig)
