@@ -256,24 +256,23 @@ if f_meta_multi_hier and f_meta_multi_base:
             st.pyplot(fig_sat_sens)
             plt.close(fig_sat_sens)
 
-            # Grafik 6: Avg Lq dan Lq Maks vs N (satu gambar, dua sumbu)
-            fig_lq_sens, ax_lq = plt.subplots(figsize=(8, 5))
-            ax_lq.plot(df_multi_h['Total Pengunjung'], df_multi_h['Avg Lq'],
-                       marker='o', color=color_hier, linewidth=2.5, label='Avg Lq — Strategi')
-            ax_lq.plot(df_multi_b['Total Pengunjung'], df_multi_b['Avg Lq'],
-                       marker='o', color=color_base, linewidth=2.5, linestyle='--', label='Avg Lq — Baseline')
-            ax_lq.plot(df_multi_h['Total Pengunjung'], df_multi_h['Lq Maks'],
-                       marker='s', color=color_hier, linewidth=1.8, linestyle=':', alpha=0.7, label='Lq Maks — Strategi')
-            ax_lq.plot(df_multi_b['Total Pengunjung'], df_multi_b['Lq Maks'],
-                       marker='s', color=color_base, linewidth=1.8, linestyle=':', alpha=0.7, label='Lq Maks — Baseline')
-            ax_lq.set_title('Avg Lq dan Lq Maks vs Kapasitas Pengunjung', fontsize=12, fontweight='bold')
-            ax_lq.set_xlabel('Total Pengunjung (N)', fontsize=10)
-            ax_lq.set_ylabel('Jumlah Orang di Antrean', fontsize=10)
-            ax_lq.legend(fontsize=8)
-            ax_lq.grid(True, linestyle=':', alpha=0.6)
-            plt.tight_layout()
-            st.pyplot(fig_lq_sens)
-            plt.close(fig_lq_sens)
+            # Grafik 6: Avg Lq (bar_Lq global) vs N — grafik tersendiri
+            fig_avglq_sens = create_sensitivity_plot(
+                'Avg Lq',
+                r'Rata-rata Panjang Antrean ($\bar{L}_q$) vs N',
+                r'$\bar{L}_q$ (Orang)'
+            )
+            st.pyplot(fig_avglq_sens)
+            plt.close(fig_avglq_sens)
+
+            # Grafik 7: Lq Maks vs N
+            fig_lqmax_sens = create_sensitivity_plot(
+                'Lq Maks',
+                r'Panjang Antrean Maksimum ($L_{q,\mathrm{maks}}$) vs N',
+                r'$L_{q,\mathrm{maks}}$ (Orang)'
+            )
+            st.pyplot(fig_lqmax_sens)
+            plt.close(fig_lqmax_sens)
 
 elif (f_meta_multi_hier and not f_meta_multi_base) or (f_meta_multi_base and not f_meta_multi_hier):
     st.warning("⚠️ Untuk menampilkan Analisis Sensitivitas, harap upload Kumpulan Data Meta untuk KEDUA Skenario (Strategi & Baseline) di sidebar.")
