@@ -79,38 +79,57 @@ if all([f_p_hier, f_w_hier, f_m_hier, f_p_base, f_w_base, f_m_base]):
         # --- TAMPILAN DASHBOARD ---
         
         st.markdown("---")
-        st.subheader("📌 1. Ringkasan Performa (Metrik Dashboard)")
+        st.subheader("📌 1. Ringkasan Performa (Metric Dashboard)")
         
-        kpi_columns = [
+        # Semua kolom KPI yang mungkin ada (kolom baru hanya ada di CSV versi terbaru)
+        kpi_columns_all = [
             ('Total Pengunjung',       'Jumlah Orang'),
             ('Avg Rides',              'Jumlah Wahana'),
             ('Avg Queue Global (m)',   'Menit'),
             ('Avg Wq (m)',             'Menit (Wq rata-rata per wahana)'),
             ('Avg Lq',                 'Orang di Antrean (rata-rata per wahana)'),
-            ('Lq Maks',               'Orang di Antrean (wahana terpadat)'),
+            ('Lq Maks',                'Orang di Antrean (wahana terpadat)'),
             ('Satisfaction Score (%)', 'Persentase (%)'),
-            ('Global Rho',             'Skala Util (0.0 - 1.0+)')
+            ('Global Rho',             'Skala Util (0.0 - 1.0+)'),
         ]
 
-        fig_meta, axes = plt.subplots(2, 4, figsize=(18, 8))
+        # ✅ Filter hanya kolom yang ada di KEDUA file meta agar tidak KeyError
+        kpi_columns = [
+            (col, ylabel) for col, ylabel in kpi_columns_all
+            if col in df_m_hier.columns and col in df_m_base.columns
+        ]
+
+        n_kpi = len(kpi_columns)
+        ncols  = 4
+        nrows  = max(1, (n_kpi + ncols - 1) // ncols)
+        fig_meta, axes = plt.subplots(nrows, ncols, figsize=(18, 4 * nrows))
         axes = axes.flatten()
 
         for i, (col, ylabel) in enumerate(kpi_columns):
             val_h = float(df_m_hier[col].values[0])
             val_b = float(df_m_base[col].values[0])
-            
+
             labels_bar = ['Strategi (Hier)', 'Tanpa Strategi (Base)']
             values_bar = [val_h, val_b]
-            
+
             bars = axes[i].bar(labels_bar, values_bar, color=[color_hier, color_base], width=0.6)
-            
             axes[i].set_title(col.upper(), fontsize=11, fontweight='bold')
             axes[i].set_ylabel(ylabel)
-            
+
             for bar, val in zip(bars, values_bar):
-                text_val = f'{val:.3f}' if col in ('Avg Lq', 'Lq Maks', 'Avg Wq (m)') else (f'{val:.2f}' if val % 1 != 0 else f'{int(val)}')
-                axes[i].text(bar.get_x() + bar.get_width()/2, val, text_val, 
+                if col in ('Avg Lq', 'Lq Maks', 'Avg Wq (m)'):
+                    text_val = f'{val:.3f}'
+                elif val % 1 != 0:
+                    text_val = f'{val:.2f}'
+                else:
+                    text_val = f'{int(val)}'
+                axes[i].text(bar.get_x() + bar.get_width() / 2, val, text_val,
                              ha='center', va='bottom', fontweight='bold', fontsize=10)
+
+        # Sembunyikan subplot kosong
+        for j in range(n_kpi, len(axes)):
+            axes[j].axis('off')
+
         plt.tight_layout()
         st.pyplot(fig_meta)
         plt.close(fig_meta)
@@ -209,15 +228,16 @@ if f_meta_multi_hier and f_meta_multi_base:
         df_multi_h = combine_meta_files(f_meta_multi_hier)
         df_multi_b = combine_meta_files(f_meta_multi_base)
 
-        # Fungsi Pembantu Plot Line Sensitivitas
+        # Fungsi Pembantu Plot Line Sensitivitas — dengan pengecekan kolom
         def create_sensitivity_plot(col_name, title, ylabel):
+            # ✅ Skip jika kolom tidak ada di salah satu dataframe
+            if col_name not in df_multi_h.columns or col_name not in df_multi_b.columns:
+                return None
             fig, ax = plt.subplots(figsize=(8, 5))
-            
-            ax.plot(df_multi_h['Total Pengunjung'], df_multi_h[col_name], 
+            ax.plot(df_multi_h['Total Pengunjung'], df_multi_h[col_name],
                     marker='o', color=color_hier, linewidth=2.5, label='Strategi (Hierarchical + PWT)')
-            ax.plot(df_multi_b['Total Pengunjung'], df_multi_b[col_name], 
+            ax.plot(df_multi_b['Total Pengunjung'], df_multi_b[col_name],
                     marker='o', color=color_base, linewidth=2.5, linestyle='--', label='Tanpa Strategi')
-            
             ax.set_title(title, fontsize=12, fontweight='bold')
             ax.set_xlabel('Total Pengunjung (N)', fontsize=10)
             ax.set_ylabel(ylabel, fontsize=10)
@@ -226,53 +246,23 @@ if f_meta_multi_hier and f_meta_multi_base:
             plt.tight_layout()
             return fig
 
-        # Membuat 6 Plot sensitivitas dalam 2 kolom
-        col5, col6 = st.columns(2)
-        
-        with col5:
-            # Grafik 1: Waktu Tunggu vs N
-            fig_q_sens = create_sensitivity_plot('Avg Queue Global (m)', 'Waktu Tunggu vs Kapasitas Pengunjung', 'Global Avg Queue (Menit)')
-            st.pyplot(fig_q_sens)
-            plt.close(fig_q_sens)
-            
-            # Grafik 2: Global Rho vs N
-            fig_rho_sens = create_sensitivity_plot('Global Rho', 'Utilitas (ρ) vs Kapasitas Pengunjung', 'Global Rho (ρ)')
-            st.pyplot(fig_rho_sens)
-            plt.close(fig_rho_sens)
+        def show_sensitivity(fig):
+            if fig is not None:
+                st.pyplot(fig)
+                plt.close(fig)
 
-            # Grafik 5: Avg Wq vs N
-            fig_wq_sens = create_sensitivity_plot('Avg Wq (m)', 'Rata-rata Wq per Wahana vs N', 'Avg Wq (Menit)')
-            st.pyplot(fig_wq_sens)
-            plt.close(fig_wq_sens)
+        col5, col6 = st.columns(2)
+
+        with col5:
+            show_sensitivity(create_sensitivity_plot('Avg Queue Global (m)', 'Waktu Tunggu vs Kapasitas Pengunjung', 'Global Avg Queue (Menit)'))
+            show_sensitivity(create_sensitivity_plot('Global Rho', 'Utilitas (ρ) vs Kapasitas Pengunjung', 'Global Rho (ρ)'))
+            show_sensitivity(create_sensitivity_plot('Avg Wq (m)', 'Rata-rata Wq per Wahana vs N', 'Avg Wq (Menit)'))
 
         with col6:
-            # Grafik 3: Rata-rata Wahana vs N
-            fig_rides_sens = create_sensitivity_plot('Avg Rides', 'Banyak Visit Wahana vs Kapasitas Pengunjung', 'Rata-rata Wahana per Orang')
-            st.pyplot(fig_rides_sens)
-            plt.close(fig_rides_sens)
-            
-            # Grafik 4: Satisfaction vs N
-            fig_sat_sens = create_sensitivity_plot('Satisfaction Score (%)', 'Tingkat Kepuasan vs Kapasitas Pengunjung', 'Satisfaction Score (%)')
-            st.pyplot(fig_sat_sens)
-            plt.close(fig_sat_sens)
-
-            # Grafik 6: Avg Lq (bar_Lq global) vs N — grafik tersendiri
-            fig_avglq_sens = create_sensitivity_plot(
-                'Avg Lq',
-                r'Rata-rata Panjang Antrean ($\bar{L}_q$) vs N',
-                r'$\bar{L}_q$ (Orang)'
-            )
-            st.pyplot(fig_avglq_sens)
-            plt.close(fig_avglq_sens)
-
-            # Grafik 7: Lq Maks vs N
-            fig_lqmax_sens = create_sensitivity_plot(
-                'Lq Maks',
-                r'Panjang Antrean Maksimum ($L_{q,\mathrm{maks}}$) vs N',
-                r'$L_{q,\mathrm{maks}}$ (Orang)'
-            )
-            st.pyplot(fig_lqmax_sens)
-            plt.close(fig_lqmax_sens)
+            show_sensitivity(create_sensitivity_plot('Avg Rides', 'Banyak Visit Wahana vs Kapasitas Pengunjung', 'Rata-rata Wahana per Orang'))
+            show_sensitivity(create_sensitivity_plot('Satisfaction Score (%)', 'Tingkat Kepuasan vs Kapasitas Pengunjung', 'Satisfaction Score (%)'))
+            show_sensitivity(create_sensitivity_plot('Avg Lq', r'Rata-rata Panjang Antrean ($\bar{L}_q$) vs N', r'$\bar{L}_q$ (Orang)'))
+            show_sensitivity(create_sensitivity_plot('Lq Maks', r'Panjang Antrean Maksimum ($L_{q,\mathrm{maks}}$) vs N', r'$L_{q,\mathrm{maks}}$ (Orang)'))
 
 elif (f_meta_multi_hier and not f_meta_multi_base) or (f_meta_multi_base and not f_meta_multi_hier):
     st.warning("⚠️ Untuk menampilkan Analisis Sensitivitas, harap upload Kumpulan Data Meta untuk KEDUA Skenario (Strategi & Baseline) di sidebar.")
